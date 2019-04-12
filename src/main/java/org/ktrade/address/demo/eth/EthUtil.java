@@ -1,0 +1,70 @@
+package org.ktrade.address.demo.eth;
+
+import org.ktrade.address.demo.btc.BtcUtil;
+import org.ktrade.address.demo.coin.EthCoinAddress;
+import org.ktrade.address.demo.util.FileUtil;
+import org.ktrade.address.demo.util.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Keys;
+import org.web3j.utils.Numeric;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EthUtil {
+    private final static Logger logger = LoggerFactory.getLogger(BtcUtil.class);
+
+
+    /**
+     * 获得ETH地址
+     *
+     * @param count
+     * @return
+     */
+    public List<EthCoinAddress> getEtcCoinAddressList(int count) {
+        List<EthCoinAddress> ethCoinAddressList = new ArrayList<EthCoinAddress>();
+        for (int i = 0; i < count; i++) {
+            EthCoinAddress etchainCoinAddress = new EthCoinAddress();
+            ECKeyPair ecKeyPair = null;
+            try {
+                ecKeyPair = Keys.createEcKeyPair();
+                String address = Keys.getAddress(ecKeyPair.getPublicKey());
+                if (!StringUtils.isEmpty(address)) {
+                    String addressWithPrifix = "0x" + address;
+                    etchainCoinAddress.setCoinAddress(addressWithPrifix);
+                    etchainCoinAddress.setPublicKey(Numeric.toHexStringNoPrefix(ecKeyPair.getPublicKey()));
+                    etchainCoinAddress.setPrivateKey(Numeric.toHexStringNoPrefix(ecKeyPair.getPrivateKey()));
+                    ethCoinAddressList.add(etchainCoinAddress);
+                }
+            } catch (Exception e) {
+                logger.error("generateEthereumAddress error");
+            }
+        }
+        return ethCoinAddressList;
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        int count = 5000;    //ETH个数
+        String filePath = "d:/eth_test.txt"; //生成文件位置，会自动覆盖
+
+        EthUtil ethUtil = new EthUtil();
+        List<EthCoinAddress> list = ethUtil.getEtcCoinAddressList(count);
+        StringBuffer sb = new StringBuffer("ETH 地址、私钥、公钥\n");
+        for (int i = 0, size = list.size(); i < size; i++) {
+            EthCoinAddress ethCoinAddress = list.get(i);
+            String idx = StringUtil.toLength(i + 1 + "", String.valueOf(count).length());
+            //sb.append(idx).append(".")
+            sb.append(ethCoinAddress.getCoinAddress()).append("\t")
+                    .append(ethCoinAddress.getPrivateKey()).append(ethCoinAddress.getPrivateKey().length() < 64 ? "\t\t" : "\t")
+                    .append(ethCoinAddress.getPublicKey()).append("\n");
+            //System.out.println(list.get(i));
+        }
+
+        FileUtil.write(filePath, sb.toString());
+        System.out.println(filePath + " " + count + "个地址");
+    }
+}
